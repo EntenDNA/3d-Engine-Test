@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import me.Nanook.util.mathHelper;
 import me.Nanook.util.mesh;
@@ -56,17 +57,22 @@ public class Game implements Runnable{
     private double fFar = 1000;
     private double fFov = 90;
     private double fAspectRatio;
-	private double fFovRad;
 	private double fTheta;
-	private double offset;
 	
-	private vec3d vCamera;
+	protected vec3d vCamera;
+	protected vec3d vLookDir;
+	protected vec3d vRight;
+	protected float fYaw;
 	private vec3d vLight;
+	private Player player;
     
     private double[][] matProj;
     private double[][] matRotX;
     private double[][] matRotY;
     private double[][] matRotZ;
+    private ArrayList<triangle> triList;
+    
+    protected KeyManager keyManager;
 	
 	public Game(String title, int width, int height)
 	{
@@ -75,22 +81,22 @@ public class Game implements Runnable{
 		this.TITLE = title;
 		
 		this.fAspectRatio = HEIGHT/WIDTH;
-		this.fFovRad = 1 / Math.tan(fFov * 0.5 / 180 * 3.1415);
 	    
-		this.matProj = new double[][] {{fAspectRatio * fFovRad, 0, 0, 0},
-							     		{0, fFovRad, 0, 0},
-							     		{0, 0, fFar / (fFar - fNear), 1},
-							     		{0, 0, (-fFar * fNear) / (fFar - fNear), 0}};
-							     				
+		this.matProj = mathHelper.matrixMakeProjection(this.fFov, this.fAspectRatio, this.fNear, this.fFar);
+		
 		this.fTheta = 0;
-		this.offset = 3;
 		this.vCamera = new vec3d(0, 0, 0);
 		this.vLight = new vec3d(0, 0, -1);
+		this.vLookDir = new vec3d(0, 0, 0);
+		
+		keyManager = new KeyManager();
+		player = new Player(this);
 	}
 	
 	private void init()
 	{
 		display = new Display(TITLE, WIDTH, HEIGHT);
+		display.getFrame().addKeyListener(keyManager);
 	}
 	
 	private void tick()
@@ -107,81 +113,79 @@ public class Game implements Runnable{
 		// clear screen
 		g.clearRect(0, 0, WIDTH, HEIGHT);
 		
+		// update position and orientation
+		player.updateMovement();
+		
 		// calculate rotation matrices
-		fTheta += 0.0002;
-		double[][] matRotZ = {{Math.cos(fTheta), -Math.sin(fTheta), 0, 0},
-				   			  {Math.sin(fTheta), Math.cos(fTheta), 0, 0},
-				   			  {0, 0, 1, 0},
-				   			  {0, 0, 0, 1}};
-								
-		double[][] matRotY = {{Math.cos(fTheta*0.3), 0, Math.sin(fTheta*0.3), 0},
-	   			  			  {0, 1, 0, 0},
-	   			  			  {-Math.sin(fTheta*0.3), 0, Math.cos(fTheta*0.3), 0},
-	   			  			  {0, 0, 0, 1}};
-							
-		double[][] matRotX = {{1, 0, 0, 0},
-		  			  		  {0, Math.cos(fTheta *0.5), -Math.sin(fTheta *0.5), 0},
-		  			  		  {0, Math.sin(fTheta *0.5), Math.cos(fTheta *0.5), 0},
-		  			  		  {0, 0, 0, 1}};
-					
+		//fTheta += 0.0002;
+		matRotX = mathHelper.matrixMakeRotationX(fTheta);			
+		matRotZ = mathHelper.matrixMakeRotationZ(fTheta);
+		
+		// transformation and rotation matrices
+		double[][] matTrans, matWorld;
+		matTrans = mathHelper.matrixMakeTranslation(0, 0, 3); // what coordinates the cube has
+		matWorld = mathHelper.matrixMakeIdentity();
+		matWorld = mathHelper.matrixMultiplyMatrix(matRotZ, matRotX);
+		matWorld = mathHelper.matrixMultiplyMatrix(matWorld, matTrans);
+		
+		vec3d vUp = new vec3d(0, 1, 0);
+		vec3d vTarget = new vec3d(0, 0, 1);
+		matRotY = mathHelper.matrixMakeRotationY(fYaw);
+		vLookDir = mathHelper.multiplyMartixVector(vTarget, matRotY);
+		vTarget = mathHelper.vectorAdd(vCamera, vLookDir);
+		
+		// right vector is crossproduct of vUp and vLookDir
+		vRight = mathHelper.vectorCrossProduct(vUp, vLookDir);
+		
+		double[][] matCamera = mathHelper.matrixPointAt(vCamera, vTarget, vUp);
+		
+		// make view matrix from camera
+		double[][] matView = mathHelper.matrixQuickInverse(matCamera);
+		
+		// triangle array
+		triList = new ArrayList<triangle>();
+		
+		// math
 		for (triangle tri : meshCube.tris)
 		{
-			triangle triProjected, triTranslated, triRotatedX, triRotatedY, triRotatedZ;
+			triangle triProjected, triTransformed, triViewed = null;
 			
-			// rotation x
-			triRotatedX = new triangle(mathHelper.MultiplyMartixVector(tri.vec3dList[0], matRotX),
-									   mathHelper.MultiplyMartixVector(tri.vec3dList[1], matRotX),
-									   mathHelper.MultiplyMartixVector(tri.vec3dList[2], matRotX));
-			
-			// rotation y
-			triRotatedY = new triangle(mathHelper.MultiplyMartixVector(triRotatedX.vec3dList[0], matRotY),
-									   mathHelper.MultiplyMartixVector(triRotatedX.vec3dList[1], matRotY),
-									   mathHelper.MultiplyMartixVector(triRotatedX.vec3dList[2], matRotY));
-			
-			// rotation z
-			triRotatedZ = new triangle(mathHelper.MultiplyMartixVector(triRotatedX.vec3dList[0], matRotZ),
-									   mathHelper.MultiplyMartixVector(triRotatedX.vec3dList[1], matRotZ),
-									   mathHelper.MultiplyMartixVector(triRotatedX.vec3dList[2], matRotZ));
-			
-			// translate triangle
-			triTranslated = triRotatedZ.deepCopy();
-			triTranslated.vec3dList[0].z += offset;
-			triTranslated.vec3dList[1].z += offset;
-			triTranslated.vec3dList[2].z += offset;
+			// transform triangle
+			triTransformed = new triangle(mathHelper.multiplyMartixVector(tri.vec3dList[0], matWorld),
+										  mathHelper.multiplyMartixVector(tri.vec3dList[1], matWorld),
+										  mathHelper.multiplyMartixVector(tri.vec3dList[2], matWorld));
 			
 			vec3d normal, line1, line2;
-			line1 = new vec3d(triTranslated.vec3dList[1].x - triTranslated.vec3dList[0].x,
-							  triTranslated.vec3dList[1].y - triTranslated.vec3dList[0].y,
-							  triTranslated.vec3dList[1].z - triTranslated.vec3dList[0].z);
+			line1 = mathHelper.vectorSub(triTransformed.vec3dList[1], triTransformed.vec3dList[0]);
+			line2 = mathHelper.vectorSub(triTransformed.vec3dList[2], triTransformed.vec3dList[0]);
+			normal = mathHelper.vectorCrossProduct(line1, line2);
+			normal = mathHelper.vectorNormalise(normal);
 			
-			line2 = new vec3d(triTranslated.vec3dList[2].x - triTranslated.vec3dList[0].x,
-					  		  triTranslated.vec3dList[2].y - triTranslated.vec3dList[0].y,
-					  		  triTranslated.vec3dList[2].z - triTranslated.vec3dList[0].z);
+			vec3d vCameraRay = mathHelper.vectorSub(triTransformed.vec3dList[0], vCamera);
 			
-			// cross-product for normal calculation
-			normal = new vec3d(line1.y * line2.z - line1.z * line2.y,
-							   line1.z * line2.x - line1.x * line2.z,
-							   line1.x * line2.y - line1.y * line2.x);
-			
-			// It's normally normal to normalize the normal
-			float l = (float) Math.sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
-			normal.x /= l; normal.y /= l; normal.z /= l;
-			
-			if(normal.x * (triTranslated.vec3dList[0].x - vCamera.x) + 
-			   normal.y * (triTranslated.vec3dList[0].y - vCamera.y) +
-			   normal.z * (triTranslated.vec3dList[0].z - vCamera.z) < 0.0f)
+			if(mathHelper.vectorDotProduct(normal, vCameraRay) < 0.0f)
 			{
+				// light
 				vLight = new vec3d(0, 0, -1);
-				float length = (float) Math.sqrt(vLight.x*vLight.x + vLight.y*vLight.y + vLight.z*vLight.z);
-				vLight.x /= length; vLight.y /= length; vLight.z /= length;
+				vLight = mathHelper.vectorNormalise(vLight);
 
 				// How similar is normal to light direction
 				float dp = (float) (normal.x * vLight.x + normal.y * vLight.y + normal.z * vLight.z);
 				
-				// project from 3d -> 2d
-				triProjected = new triangle(mathHelper.MultiplyMartixVector(triTranslated.vec3dList[0], matProj),
-									   		mathHelper.MultiplyMartixVector(triTranslated.vec3dList[1], matProj),
-									   		mathHelper.MultiplyMartixVector(triTranslated.vec3dList[2], matProj));
+				// world space to view space
+				triViewed = new triangle(mathHelper.multiplyMartixVector(triTransformed.vec3dList[0], matView),
+									     mathHelper.multiplyMartixVector(triTransformed.vec3dList[1], matView),
+									     mathHelper.multiplyMartixVector(triTransformed.vec3dList[2], matView));
+				
+				// project from 3d -> 2d	
+				triProjected = new triangle(mathHelper.multiplyMartixVector(triViewed.vec3dList[0], matProj),
+									   		mathHelper.multiplyMartixVector(triViewed.vec3dList[1], matProj),
+									   		mathHelper.multiplyMartixVector(triViewed.vec3dList[2], matProj));
+				
+				// normalize
+				triProjected.vec3dList[0] = mathHelper.vectorDiv(triProjected.vec3dList[0], triProjected.vec3dList[0].w);
+				triProjected.vec3dList[1] = mathHelper.vectorDiv(triProjected.vec3dList[1], triProjected.vec3dList[1].w);
+				triProjected.vec3dList[2] = mathHelper.vectorDiv(triProjected.vec3dList[2], triProjected.vec3dList[2].w);
 				
 				// scale into view
 				triProjected.vec3dList[0].x += 1.0; triProjected.vec3dList[0].y += 1.0;
@@ -199,15 +203,23 @@ public class Game implements Runnable{
 				if(color < 0) {color = 0;}
 				else if(color > 255) {color = 255;}
 				
-				// draw triangle
-				g.setColor(new Color(color, color, color));
-				g.fillPolygon(new int[] {(int) triProjected.vec3dList[0].x, (int) triProjected.vec3dList[1].x, (int) triProjected.vec3dList[2].x},
-						  	  new int[] {(int) triProjected.vec3dList[0].y, (int) triProjected.vec3dList[1].y, (int) triProjected.vec3dList[2].y}, 3);
-				
-				g.setColor(Color.black);
-				g.drawPolygon(new int[] {(int) triProjected.vec3dList[0].x, (int) triProjected.vec3dList[1].x, (int) triProjected.vec3dList[2].x},
-					  	  new int[] {(int) triProjected.vec3dList[0].y, (int) triProjected.vec3dList[1].y, (int) triProjected.vec3dList[2].y}, 3);
+				triProjected.shade = color;
+				triList.add(triProjected);
 			}
+		}
+		
+		// visuals
+		for(triangle tri : triList)
+		{
+			// fill triangle
+			g.setColor(new Color(tri.shade, tri.shade, tri.shade));
+			g.fillPolygon(new int[] {(int) tri.vec3dList[0].x, (int) tri.vec3dList[1].x, (int) tri.vec3dList[2].x},
+					  	  new int[] {(int) tri.vec3dList[0].y, (int) tri.vec3dList[1].y, (int) tri.vec3dList[2].y}, 3);
+			
+			// draw triangles
+			/*g.setColor(Color.black);
+			g.drawPolygon(new int[] {(int) tri.vec3dList[0].x, (int) tri.vec3dList[1].x, (int) tri.vec3dList[2].x},
+				  	  new int[] {(int) tri.vec3dList[0].y, (int) tri.vec3dList[1].y, (int) tri.vec3dList[2].y}, 3);*/
 		}
 		
 		// end drawing

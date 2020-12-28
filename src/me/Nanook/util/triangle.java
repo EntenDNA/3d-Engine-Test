@@ -3,6 +3,7 @@ package me.Nanook.util;
 public class triangle{
 	
 	public vec3d[] vec3dList = new vec3d[3];
+	public int shade;
 	
 	public triangle(vec3d v1, vec3d v2, vec3d v3)
 	{
