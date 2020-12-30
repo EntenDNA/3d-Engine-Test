@@ -1,11 +1,11 @@
 package me.Nanook.main;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 import me.Nanook.util.mathHelper;
 import me.Nanook.util.mesh;
@@ -73,6 +73,9 @@ public class Game implements Runnable{
     private ArrayList<triangle> triList;
     
     protected KeyManager keyManager;
+    protected boolean showDebug;
+    
+    private static Font sanSerifFont = new Font("Default", Font.BOLD, 15);
 	
 	public Game(String title, int width, int height)
 	{
@@ -86,7 +89,7 @@ public class Game implements Runnable{
 		
 		this.fTheta = 0;
 		this.vCamera = new vec3d(0, 0, 0);
-		this.vLight = new vec3d(0, 0, -1);
+		this.vLight = new vec3d(-1.5, 0, -1);
 		this.vLookDir = new vec3d(0, 0, 0);
 		
 		keyManager = new KeyManager();
@@ -166,7 +169,6 @@ public class Game implements Runnable{
 			if(mathHelper.vectorDotProduct(normal, vCameraRay) < 0.0f)
 			{
 				// light
-				vLight = new vec3d(0, 0, -1);
 				vLight = mathHelper.vectorNormalise(vLight);
 
 				// How similar is normal to light direction
@@ -177,34 +179,37 @@ public class Game implements Runnable{
 									     mathHelper.multiplyMartixVector(triTransformed.vec3dList[1], matView),
 									     mathHelper.multiplyMartixVector(triTransformed.vec3dList[2], matView));
 				
-				// project from 3d -> 2d	
-				triProjected = new triangle(mathHelper.multiplyMartixVector(triViewed.vec3dList[0], matProj),
-									   		mathHelper.multiplyMartixVector(triViewed.vec3dList[1], matProj),
-									   		mathHelper.multiplyMartixVector(triViewed.vec3dList[2], matProj));
+				triangle[] clipped;
+				clipped = mathHelper.triangleClipAgainstPlane(new vec3d(0, 0, 1), new vec3d(0, 0, 1), triViewed);
 				
-				// normalize
-				triProjected.vec3dList[0] = mathHelper.vectorDiv(triProjected.vec3dList[0], triProjected.vec3dList[0].w);
-				triProjected.vec3dList[1] = mathHelper.vectorDiv(triProjected.vec3dList[1], triProjected.vec3dList[1].w);
-				triProjected.vec3dList[2] = mathHelper.vectorDiv(triProjected.vec3dList[2], triProjected.vec3dList[2].w);
-				
-				// scale into view
-				triProjected.vec3dList[0].x += 1.0; triProjected.vec3dList[0].y += 1.0;
-				triProjected.vec3dList[1].x += 1.0; triProjected.vec3dList[1].y += 1.0;
-				triProjected.vec3dList[2].x += 1.0; triProjected.vec3dList[2].y += 1.0;
-				triProjected.vec3dList[0].x *= 0.5 * this.WIDTH;
-				triProjected.vec3dList[0].y *= 0.5 * this.HEIGHT;
-				triProjected.vec3dList[1].x *= 0.5 * this.WIDTH;
-				triProjected.vec3dList[1].y *= 0.5 * this.HEIGHT;
-				triProjected.vec3dList[2].x *= 0.5 * this.WIDTH;
-				triProjected.vec3dList[2].y *= 0.5 * this.HEIGHT;
-				
-				// calculate color
-				int color = (int) (dp * 255);
-				if(color < 0) {color = 0;}
-				else if(color > 255) {color = 255;}
-				
-				triProjected.shade = color;
-				triList.add(triProjected);
+				for(int i=0; i<clipped.length; i++)
+				{
+					// project from 3d -> 2d	
+					triProjected = new triangle(mathHelper.multiplyMartixVector(clipped[i].vec3dList[0], matProj),
+										   		mathHelper.multiplyMartixVector(clipped[i].vec3dList[1], matProj),
+										   		mathHelper.multiplyMartixVector(clipped[i].vec3dList[2], matProj));
+					
+					// normalize
+					triProjected.vec3dList[0] = mathHelper.vectorDiv(triProjected.vec3dList[0], triProjected.vec3dList[0].w);
+					triProjected.vec3dList[1] = mathHelper.vectorDiv(triProjected.vec3dList[1], triProjected.vec3dList[1].w);
+					triProjected.vec3dList[2] = mathHelper.vectorDiv(triProjected.vec3dList[2], triProjected.vec3dList[2].w);
+					
+					// scale into view
+					triProjected.vec3dList[0] = mathHelper.vectorAdd(triProjected.vec3dList[0], new vec3d(1, 1, 1));
+					triProjected.vec3dList[1] = mathHelper.vectorAdd(triProjected.vec3dList[1], new vec3d(1, 1, 1));
+					triProjected.vec3dList[2] = mathHelper.vectorAdd(triProjected.vec3dList[2], new vec3d(1, 1, 1));
+					triProjected.vec3dList[0] = mathHelper.vectorMul(triProjected.vec3dList[0], 0.5 * this.WIDTH);
+					triProjected.vec3dList[1] = mathHelper.vectorMul(triProjected.vec3dList[1], 0.5 * this.WIDTH);
+					triProjected.vec3dList[2] = mathHelper.vectorMul(triProjected.vec3dList[2], 0.5 * this.WIDTH);
+					
+					// calculate color
+					int color = (int) (dp * 255);
+					if(color < 40) {color = 40;}
+					else if(color > 255) {color = 255;}
+					
+					triProjected.shade = color;
+					triList.add(triProjected);
+				}
 			}
 		}
 		
@@ -220,6 +225,18 @@ public class Game implements Runnable{
 			/*g.setColor(Color.black);
 			g.drawPolygon(new int[] {(int) tri.vec3dList[0].x, (int) tri.vec3dList[1].x, (int) tri.vec3dList[2].x},
 				  	  new int[] {(int) tri.vec3dList[0].y, (int) tri.vec3dList[1].y, (int) tri.vec3dList[2].y}, 3);*/
+			
+		}
+		
+		// show debug info
+		if(this.showDebug)
+		{
+			g.setColor(Color.BLACK);
+			g.setFont(this.sanSerifFont);
+			
+			g.drawString("Debug", 0, 15);
+			g.drawString("X: " + Math.round(vCamera.x * 100) / 100f + " Y: " + Math.round(vCamera.y * 100) / 100f + " Z: " + Math.round(vCamera.z * 100) / 100f, 0, 30);
+			g.drawString("Yaw: " + fYaw, 0, 45);
 		}
 		
 		// end drawing

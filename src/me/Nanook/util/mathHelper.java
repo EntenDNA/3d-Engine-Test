@@ -220,4 +220,75 @@ public class mathHelper {
 		vec3d lineToIntersect = vectorMul(lineStartToEnd, t);
 		return vectorAdd(lineStart, lineToIntersect);
 	}
+	
+	public static triangle[] triangleClipAgainstPlane(vec3d planeP, vec3d planeN, triangle tri)
+	{
+		// normalize normal if necessary
+		planeN = vectorNormalise(planeN);
+		
+		vec3d[] insidePoints = new vec3d[3];
+		vec3d[] outsidePoints = new vec3d[3];
+		int nInsidePointCount = 0;
+		int nOutsidePointCount = 0;
+		
+		float d0 = dist(planeP, planeN, tri.vec3dList[0]);
+		float d1 = dist(planeP, planeN, tri.vec3dList[1]);
+		float d2 = dist(planeP, planeN, tri.vec3dList[2]);
+		
+		if (d0 >= 0) { insidePoints[nInsidePointCount++] = tri.vec3dList[0]; }
+		else { outsidePoints[nOutsidePointCount++] = tri.vec3dList[0]; }
+		if (d1 >= 0) { insidePoints[nInsidePointCount++] = tri.vec3dList[1]; }
+		else { outsidePoints[nOutsidePointCount++] = tri.vec3dList[1]; }
+		if (d2 >= 0) { insidePoints[nInsidePointCount++] = tri.vec3dList[2]; }
+		else { outsidePoints[nOutsidePointCount++] = tri.vec3dList[2]; }
+		
+		triangle outTri1 = null;
+		triangle outTri2 = null;
+
+		if (nInsidePointCount == 3)
+		{
+			outTri1 = tri.deepCopy();
+
+			return new triangle[] {outTri1};
+		}
+
+		if (nInsidePointCount == 1 && nOutsidePointCount == 2)
+		{
+			
+			outTri1 = new triangle(insidePoints[0], vectorIntersectPlane(planeP, planeN, insidePoints[0], outsidePoints[0]),
+													vectorIntersectPlane(planeP, planeN, insidePoints[0], outsidePoints[1]));
+			// Copy appearance info to new triangle
+			outTri1.shade = tri.shade;
+
+			return new triangle[] {outTri1};
+		}
+
+		if (nInsidePointCount == 2 && nOutsidePointCount == 1)
+		{
+			
+			// The first triangle consists of the two inside points and a new
+			// point determined by the location where one side of the triangle
+			// intersects with the plane
+			outTri1 = new triangle(insidePoints[0], insidePoints[1], vectorIntersectPlane(planeP, planeN, insidePoints[0], outsidePoints[0]));
+			
+			// The second triangle is composed of one of he inside points, a
+			// new point determined by the intersection of the other side of the 
+			// triangle and the plane, and the newly created point above
+			outTri2 = new triangle(insidePoints[1], outTri1.vec3dList[2], vectorIntersectPlane(planeP, planeN, insidePoints[1], outsidePoints[0]));
+			
+			// Copy appearance info to new triangles
+			outTri1.shade = tri.shade;
+			outTri2.shade = tri.shade;
+
+			return new triangle[] {outTri1, outTri2};
+		}
+		
+		return new triangle[] {};
+	}
+	
+	private static float dist(vec3d planeP, vec3d planeN, vec3d p)
+	{
+		//vec3d n = vectorNormalise(p);
+		return (float) (planeN.x * p.x + planeN.y * p.y + planeN.z * p.z - vectorDotProduct(planeN, planeP));
+	}
 }

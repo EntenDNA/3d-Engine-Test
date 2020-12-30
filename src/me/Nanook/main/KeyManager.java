@@ -8,6 +8,7 @@ public class KeyManager implements KeyListener{
 	private boolean[] keys;
 	public boolean up, down, left, right, forward, backward;
 	public boolean tLeft, tRight;
+	public boolean debug;
 	
 	public KeyManager()
 	{
@@ -21,12 +22,13 @@ public class KeyManager implements KeyListener{
 		
 		tLeft = keys[KeyEvent.VK_LEFT];
 		tRight = keys[KeyEvent.VK_RIGHT];
+		
+		debug = keys[KeyEvent.VK_F3];
 	}
 	
 	@Override
 	public void keyTyped(KeyEvent e) 
 	{
-		
 	}
 
 	@Override
@@ -55,6 +57,7 @@ public class KeyManager implements KeyListener{
 		
 		tLeft = keys[KeyEvent.VK_LEFT];
 		tRight = keys[KeyEvent.VK_RIGHT];
+		
+		debug = keys[KeyEvent.VK_F3];
 	}
-
 }

@@ -66,5 +66,15 @@ public class Player {
 		{
 			game.fYaw -= this.sens;
 		}
+		
+		// show debug info
+		if(!game.showDebug && game.keyManager.debug)
+		{
+			game.showDebug = true;
+		}
+		else if(game.showDebug && game.keyManager.debug)
+		{
+			game.showDebug = false;
+		}
 	}
 }
