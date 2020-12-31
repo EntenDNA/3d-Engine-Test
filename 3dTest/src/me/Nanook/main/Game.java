@@ -23,9 +23,7 @@ public class Game implements Runnable{
 	private BufferStrategy bs;
 	private Graphics g;
 	
-	//private Cube[] cubeList = new Cube[] {new Cube(0, 0, 2), new Cube(0, 0, 3), new Cube(1, 0, 2), new Cube(1, 0, 3)};
 	private Cube[] cubeList = new Cube[100];
-	//private Cube[] updateCubeList = Cube.updateSides(cubeList);
 	private Cube[] updateCubeList;
 	private int counter;
 											   
@@ -110,7 +108,7 @@ public class Game implements Runnable{
 		vLookDir = mathHelper.multiplyMartixVector(vTarget, matRotY);
 		vTarget = mathHelper.vectorAdd(vCamera, vLookDir);
 		
-		// right vector is crossproduct of vUp and vLookDir
+		// right vector is cross-product of vUp and vLookDir
 		vRight = mathHelper.vectorCrossProduct(vUp, vLookDir);
 		
 		double[][] matCamera = mathHelper.matrixPointAt(vCamera, vTarget, vUp);
@@ -162,7 +160,7 @@ public class Game implements Runnable{
 					// light
 					vLight = mathHelper.vectorNormalise(vLight);
 	
-					// How similar is normal to light direction
+					// how similar is normal to light direction
 					float dp = (float) (normal.x * vLight.x + normal.y * vLight.y + normal.z * vLight.z);
 					
 					// world space to view space
@@ -207,8 +205,6 @@ public class Game implements Runnable{
 			counter = 0;
 		}
 		
-		//Collections.sort(triList);
-		
 		// visuals
 		for(triangle tri : triList)
 		{
@@ -218,9 +214,9 @@ public class Game implements Runnable{
 					  	  new int[] {(int) tri.vec3dList[0].y, (int) tri.vec3dList[1].y, (int) tri.vec3dList[2].y}, 3);
 			
 			// draw triangles
-			/*g.setColor(Color.black);
+			g.setColor(Color.black);
 			g.drawPolygon(new int[] {(int) tri.vec3dList[0].x, (int) tri.vec3dList[1].x, (int) tri.vec3dList[2].x},
-				  	  new int[] {(int) tri.vec3dList[0].y, (int) tri.vec3dList[1].y, (int) tri.vec3dList[2].y}, 3);*/
+				  	  new int[] {(int) tri.vec3dList[0].y, (int) tri.vec3dList[1].y, (int) tri.vec3dList[2].y}, 3);
 			
 		}
 		
