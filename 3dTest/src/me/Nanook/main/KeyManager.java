@@ -7,23 +7,13 @@ public class KeyManager implements KeyListener{
 	
 	private boolean[] keys;
 	public boolean up, down, left, right, forward, backward;
-	public boolean tLeft, tRight;
+	public boolean tLeft, tRight, tUp, tDown;
 	public boolean debug;
 	
 	public KeyManager()
 	{
 		keys = new boolean[256];
-		up = keys[KeyEvent.VK_SPACE];
-		down = keys[KeyEvent.VK_SHIFT];
-		left = keys[KeyEvent.VK_A];
-		right = keys[KeyEvent.VK_D];
-		forward = keys[KeyEvent.VK_W];
-		backward = keys[KeyEvent.VK_S];
-		
-		tLeft = keys[KeyEvent.VK_LEFT];
-		tRight = keys[KeyEvent.VK_RIGHT];
-		
-		debug = keys[KeyEvent.VK_F3];
+		updateKeys();
 	}
 	
 	@Override

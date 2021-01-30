@@ -227,7 +227,7 @@ public class Game implements Runnable{
 			
 			g.drawString("Debug", 0, 15);
 			g.drawString("X: " + Math.round(vCamera.x * 100) / 100f + " Y: " + Math.round(vCamera.y * 100) / 100f + " Z: " + Math.round(vCamera.z * 100) / 100f, 0, 30);
-			g.drawString("Yaw: " + fYaw, 0, 45);
+			g.drawString("Yaw: " + Math.round(fYaw*180/Math.PI * 100) / 100f, 0, 45);
 		}
 		
 		// end drawing

@@ -110,6 +110,16 @@ public class mathHelper {
 		return matrix;
 	}
 	
+	public static double[][] matrixMakeOrthographic(double left, double right, double bottom, double top, double fNear, double fFar)
+	{
+		double[][] matrix = new double[][] {{2/(right-left), 0, 0, -(right+left)/(right-left)},
+											{0, 2/(top-bottom), 0, -(top+bottom)/(top-bottom)},
+											{0, 0, -2/(fFar-fNear), -(fFar+fNear)/(fFar-fNear)},
+											{0, 0, 0, 1}};
+		
+		return matrix;
+	}
+	
 	public static double[][] matrixMultiplyMatrix(double[][] m1, double[][] m2)
 	{
 		double[][] matrix = new double[][] {{0, 0, 0, 0},
