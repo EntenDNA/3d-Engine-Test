@@ -1,10 +1,8 @@
 package me.Nanook.util;
 
-import java.util.ArrayList;
-
 public class mathHelper {
 	
-	public static vec3d multiplyMartixVector(vec3d i, double[][] m)
+	public static vec3d multiplyVectorMatrix(vec3d i, double[][] m)
 	{
 		vec3d v = new vec3d(0, 0, 0);
 		v.x = i.x * m[0][0] + i.y * m[1][0] + i.z * m[2][0] + i.w * m[3][0];
@@ -101,6 +99,7 @@ public class mathHelper {
 											{0, 0, 0, 0},
 											{0, 0, 0, 0},
 											{0, 0, 0, 0}};
+											
 		matrix[0][0] = fAspectRatio * fFovRad;
 		matrix[1][1] = fFovRad;
 		matrix[2][2] = fFar / (fFar - fNear);
@@ -127,8 +126,30 @@ public class mathHelper {
 											{0, 0, 0, 0},
 											{0, 0, 0, 0}};
 		for (int c = 0; c < 4; c++)
+		{
 			for (int r = 0; r < 4; r++)
+			{
 				matrix[r][c] = m1[r][0] * m2[0][c] + m1[r][1] * m2[1][c] + m1[r][2] * m2[2][c] + m1[r][3] * m2[3][c];
+			}
+		}
+		
+		return matrix;
+	}
+	
+	public static double[][] matrixAddMatrix(double[][] m1, double[][] m2)
+	{
+		double[][] matrix = new double[][] {{0, 0, 0, 0},
+											{0, 0, 0, 0},
+											{0, 0, 0, 0},
+											{0, 0, 0, 0}};
+											
+		for(int c = 0; c < 4 ; c++)
+		{
+			for(int r = 0; r < 4 ; r++)
+			{
+				matrix[c][r] = m1[c][r] + m2[c][r];
+			}
+		}
 		
 		return matrix;
 	}

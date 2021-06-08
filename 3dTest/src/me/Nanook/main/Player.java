@@ -12,12 +12,21 @@ public class Player {
 	public Player(Game game)
 	{
 		this.game = game;
-		this.vel = 0.002;
-		this.sens = 0.002;
+		this.vel = 0.02;
+		this.sens = 0.02;
 	}
 	
 	public void updateMovement()
 	{
+		if(game.keyManager.sprint)
+		{
+			this.vel = 0.06;
+		}
+		else
+		{
+			this.vel = 0.02;
+		}
+		
 		// move up and down
 		if(game.keyManager.up)
 		{
@@ -65,6 +74,16 @@ public class Player {
 		else if(game.keyManager.tRight)
 		{
 			game.fYaw -= this.sens;
+		}
+		
+		// look up and down
+		if(game.keyManager.tUp)
+		{
+			game.fPitch += this.sens;
+		}
+		else if(game.keyManager.tDown)
+		{
+			game.fPitch -= this.sens;
 		}
 		
 		// show debug info
