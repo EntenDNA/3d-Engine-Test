@@ -9,6 +9,7 @@ public class KeyManager implements KeyListener{
 	public boolean up, down, left, right, forward, backward, sprint;
 	public boolean tLeft, tRight, tUp, tDown;
 	public boolean debug;
+	public boolean place;
 	
 	public KeyManager()
 	{
@@ -52,5 +53,7 @@ public class KeyManager implements KeyListener{
 		tDown = keys[KeyEvent.VK_DOWN];
 		
 		debug = keys[KeyEvent.VK_F3];
+		
+		place = keys[KeyEvent.VK_F];
 	}
 }

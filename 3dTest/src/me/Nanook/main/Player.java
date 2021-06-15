@@ -85,6 +85,15 @@ public class Player {
 		{
 			game.fPitch -= this.sens;
 		}
+	}
+	
+	public void updateActions(vec3d cam)
+	{
+		// place blocks
+		if(game.keyManager.place)
+		{
+			game.addCube(cam);
+		}
 		
 		// show debug info
 		if(!game.showDebug && game.keyManager.debug)

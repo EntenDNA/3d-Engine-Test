@@ -69,7 +69,7 @@ public class Cube {
 		this.bottom = true;
 	}
 	
-	public static Cube[] updateSides(Cube[] cubes)
+	public static ArrayList<Cube> updateSides(ArrayList<Cube> cubes)
 	{	
 		for(Cube cube1 : cubes)
 		{
